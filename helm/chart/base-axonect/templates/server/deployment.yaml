@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-nginx-deployment
+  name: nginx-deployment
   labels:
     app: nginx
 spec:
@@ -19,10 +19,3 @@ spec:
         image: nginx:1.14.2
         ports:
         - containerPort: 80
-        volumeMounts:
-            - name: nginx-index-file
-              mountPath: /usr/share/nginx/html/
-      volumes:
-      - name: nginx-index-file
-        configMap:
-          name: {{ .Release.Name }}-index-html-configmap

@@ -1,7 +1,7 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ .Release.Name }}-nfs-server
+  name: nfs-server
 spec:
   ports:
   - name: nfs

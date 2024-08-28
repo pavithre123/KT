@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-nfs-server
+  name: nfs-server
 spec:
   replicas: 1
   selector:
@@ -30,4 +30,4 @@ spec:
       volumes:
         - name: nfs-server
           persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-nfs-server
+            claimName: nfs-server

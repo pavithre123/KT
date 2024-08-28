@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datetime-printer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datetime-printer
+  template:
+    metadata:
+      labels:
+        app: datetime-printer
+    spec:
+      containers:
+      - name: datetime-printer
+        image: busybox
+        command: ["/bin/sh", "-c", "while true; do date; sleep 1; done"]

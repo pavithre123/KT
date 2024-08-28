@@ -3,6 +3,10 @@ kind: Ingress
 metadata:
   name: {{ .Release.Name }}-server-ingress
   namespace : {{ .Release.Namespace }}
+{{- if .Values.server.ingress.annotations }}
+  annotations:
+{{ toYaml .Values.server.ingress.annotations | indent 4 }}
+{{- end }}
 spec:
   ingressClassName: nginx
   rules:

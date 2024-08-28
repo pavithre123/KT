@@ -1,10 +1,40 @@
+deployments:
+  dateTime:
+    enable: true
+  nfs: 
+    enable: false
+  fluentd:
+    enable: true
+
 global:
+  externalConfigDir: "website"
   ingress:
     domain: "my.test.lk"
 
 server:
   ingress:
     hostname: "server.nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/affinity: "cookie"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/configuration-snippet: |-
+        more_set_headers "X-Frame-Options: SAMEORIGIN";
+        more_set_headers "X-XSS-Protection: 1; mode=block";
+        more_set_headers "X-Content-Type-Options: nosniff";
+        more_set_headers "X-Permitted-Cross-Domain-Policies: none";
+        more_set_headers "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload";
+        more_set_headers "Referrer-Policy: no-referrer-when-downgrade";
+        more_set_headers "Permissions-Policy: microphone=(), camera=()";
+        more_set_headers "Content-Security-Policy: \
+            frame-src 'self'; \
+            object-src 'none'; \
+            base-uri 'self'; \
+            form-action 'self'; \
+            upgrade-insecure-requests; \
+            block-all-mixed-content; \
+            frame-ancestors 'none';"
+      nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
+      nginx.ingress.kubernetes.io/session-cookie-name: "route"   
 
 nfs:
   ingress:

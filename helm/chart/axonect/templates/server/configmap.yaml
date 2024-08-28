@@ -1,12 +1,18 @@
+{{ $externalConfigDir := .Values.global.externalConfigDir }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-index-html-configmap
   namespace : {{ .Release.Namespace }}
 data:
+{{- if .Files.Get (printf "%s/index.html" $externalConfigDir) }}
   index.html: |
+{{ tpl (.Files.Get (printf "%s/index.html" $externalConfigDir)) . | indent 4 }}
+{{ else }}
+  index.html: |-
     <html>
-    <h1>Welcome!</h1>
-    </br>
-    <h2>This web page is housed on a Pod running NGINX in {{ .Release.Namespace }}</h2>
+      <h1>Welcome!</h1>
+      </br>
+      <h2>This web page is housed on a Pod running NGINX in {{ .Release.Namespace }}</h2>
     </html
+{{- end }}

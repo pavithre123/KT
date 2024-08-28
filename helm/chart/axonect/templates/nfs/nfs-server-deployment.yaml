@@ -1,3 +1,4 @@
+{{- if .Values.deployments.nfs.enable -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,3 +33,4 @@ spec:
         - name: nfs-server
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-nfs-server
+{{- end }}

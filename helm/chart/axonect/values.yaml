@@ -1,0 +1,11 @@
+global:
+  ingress:
+    domain: "my.test.lk"
+
+server:
+  ingress:
+    hostname: "server.nginx"
+
+nfs:
+  ingress:
+    hostname: "nfs.doc"

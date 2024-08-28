@@ -1,18 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-server-ingress
+  name: {{ .Release.Name }}-nfs-ingress
   namespace : {{ .Release.Namespace }}
 spec:
   ingressClassName: nginx
   rules:
-    - host: {{.values.server.ingress.hostname }}-{{ .Values.global.ingress.domain }}
+    - host: {{.values.nfs.ingress.hostname }}-{{ .Values.global.ingress.domain }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}-nginx-service
+                name: {{ .Release.Name }}-nfs-server
                 port:
-                  number: 8080
+                  number: 2049

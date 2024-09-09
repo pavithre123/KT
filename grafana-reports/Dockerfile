@@ -7,6 +7,10 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libappindicator1 \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get install -y fonts-liberation libasound2 libatk-bridge2.0-0 libatspi2.0-0 \
+    libcurl3-gnutls libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 libvulkan1 \
+    libxkbcommon0 xdg-utils
+
 RUN pip install --upgrade pip \
     && pip install selenium webdriver_manager
 

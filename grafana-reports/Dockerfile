@@ -1,5 +1,7 @@
 FROM python:3.8-slim
 
+RUN apt-add-repository universe &&apt-add-repository multiverse
+
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     unzip \
     wget \

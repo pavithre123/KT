@@ -1,11 +1,16 @@
 FROM python:3.8-slim
 
-RUN apt-get update && apt-get install -y \
+apt-get update && apt-get upgrade -y
+apt-get install -f
+
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     unzip \
     wget \
     libxss1 \
     libappindicator1 \
     && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get install -f
 
 RUN pip install --upgrade pip \
     && pip install selenium webdriver_manager

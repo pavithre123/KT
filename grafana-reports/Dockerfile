@@ -1,8 +1,5 @@
 FROM python:3.8-slim
 
-apt-get update && apt-get upgrade -y
-apt-get install -f
-
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     unzip \
     wget \

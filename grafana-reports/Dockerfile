@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install -y \
     wget \
     libxss1 \
     libappindicator1 \
-    libindicator7 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip \

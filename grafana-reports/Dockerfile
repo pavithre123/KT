@@ -7,8 +7,6 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libappindicator1 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install -f
-
 RUN pip install --upgrade pip \
     && pip install selenium webdriver_manager
 
@@ -18,7 +16,7 @@ RUN mkdir -p /grafana-reports/scripts
 
 # Install Google Chrome
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && apt-get install ./google-chrome-stable_current_amd64.deb -y \
+    && apt-get install -f ./google-chrome-stable_current_amd64.deb -y \
     && rm google-chrome-stable_current_amd64.deb
 
 # Install ChromeDriver

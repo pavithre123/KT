@@ -3,6 +3,9 @@ FROM python:3.8-slim
 RUN apt-get update && apt-get install -y \
     unzip \
     wget \
+    libxss1 \
+    libappindicator1 \
+    libindicator7 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip \

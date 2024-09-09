@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: grafana-report
+spec:
+  containers:
+  - name: grafana-report
+    image: gcr.io/cia-rnd-195110/grafana-reports:1.0.0
+    command: [bash, -c] 
+    args:
+      - |
+        cd /grafana-reports/scripts
+        /bin/bash dalily-reports.sh
+        
+        echo sleeping
+        sleep 3600

@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: python-pod
+spec:
+  containers:
+  - name: python-pod
+    image: python:3.8-slim
+    command: [bash, -c] 
+    args:
+      - |
+        apt update
+        apt install -y unzip wget
+
+        # mkdir /grafana-reports
+        # cd /grafana-reports
+        # wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+
+        # apt install ./google-chrome*.deb -y
+
+        # wget https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.119/linux64/chromedriver-linux64.zip
+        # unzip chromedriver-linux64.zip
+
+        # ./chromedriver-linux64/chromedriver --version
+
+        # pip install --upgrade pip 
+        # pip install selenium webdriver_manager
+
+        # wget https://github.com/pavithre123/KT/blob/main/mail-send.zip
+        # pwd
+        # ls -l
+        # unzip mail-send.zip
+        # ls -l
+        # mv mail-send/* .
+
+        # ./dalily-reports.sh
+
+        echo sleeping
+        sleep 360000

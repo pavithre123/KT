@@ -1,0 +1,19 @@
+smtp:
+  host: "smtp.gmail.com"
+  port: "587"
+  username: "pavithresupprtfw1@gmail.com"
+  password: "alzfjobodjlnehfu"
+  sender: "pavithresupprtfw1@gmail.com"
+  receiver: "pavithresupprtfw1@gmail.com"
+
+email:
+  subject: "HTML Email with Inline Image from yaml"
+
+grafana:
+  username: "admin"
+  password: "HhC1JP2hnNDHJ6HAYQDSK990opIm0uwzspzuCr4Y"
+  dashboard: "http://grafana.axp.com/d/3X-EcUm4ka/axp-gateway-traffic-dashboard-pdfa?orgId=1&from=now-12h&to=now"
+
+browser:
+  width: "1920"
+  height: "5000"

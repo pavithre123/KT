@@ -5,6 +5,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+import yaml
+
+with open('config.yaml', 'r') as file:
+    configs = yaml.safe_load(file)
 
 # Setup Chrome driver with headless option
 # service = Service(ChromeDriverManager().install())
@@ -20,7 +24,7 @@ chrome_options.add_argument("--disable-gpu")
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 try:
-    driver.get("http://axonect-monetiser-grafana/d/3X-EcUm4ka/axp-gateway-traffic-dashboard-pdfa?orgId=1&from=now-12h&to=now")
+    driver.get(configs["grafana"]["dashboard"])
     # driver.get("http://grafana.axp.com/d/3X-EcUm4ka/axp-gateway-traffic-dashboard-pdfa?orgId=1&from=now-12h&to=now")
 
     # Wait for the login fields to be present
@@ -30,8 +34,8 @@ try:
     password_field = driver.find_element(By.NAME, 'password')
 
     # Enter credentials
-    username_field.send_keys('admin')
-    password_field.send_keys('HhC1JP2hnNDHJ6HAYQDSK990opIm0uwzspzuCr4Y')
+    username_field.send_keys(configs["grafana"]["username"])
+    password_field.send_keys(configs["grafana"]["password"])
 
     # Submit the form
     login_button = driver.find_element(By.XPATH, '//button[@type="submit"]')

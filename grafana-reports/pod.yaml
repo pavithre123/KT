@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: grafana-report
-    image: gcr.io/cia-rnd-195110/grafana-reports:1.0.0
+    image: gcr.io/cia-rnd-195110/grafana-reports:2.0.0
     command: [bash, -c] 
     args:
       - |

@@ -22,10 +22,12 @@ RUN apt-get update && apt-get install -y \
     libvulkan1 \
     libxkbcommon0 \
     xdg-utils \
+    sendmail \
+    file \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip \
-    && pip install selenium webdriver_manager pyyaml
+    && pip install selenium webdriver_manager
 
 WORKDIR /grafana-reports
 

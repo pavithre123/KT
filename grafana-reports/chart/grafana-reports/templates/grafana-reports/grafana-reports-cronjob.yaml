@@ -29,6 +29,7 @@ spec:
         /bin/bash dalily-reports.sh
         
         echo "Grafana dailly reports generation Success!!!"
+        sleep 360000
     volumeMounts:
     - name: grafana-reports-configmap
       mountPath: /scripts

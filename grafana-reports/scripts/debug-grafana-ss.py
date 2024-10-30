@@ -40,43 +40,51 @@ logger.addHandler(stdout_handler)
 screenshot_folder = "/grafana-reports/scripts/screenshots"
 os.makedirs(screenshot_folder, exist_ok=True)
 
-urls = {{ toRawJson .Values.grafanaReport.grafana.dashboards }}
+urls = ["http://axonect-monetiser-grafana.default/d/3X-EcUm4k/axp-gateway-traffic-dashboard-pdf?orgId=1&from=now-12h&to=now","http://axonect-monetiser-grafana.default/d/3X-EcUm4ka/axp-gateway-traffic-dashboard-pdfa?orgId=1&from=now-12h&to=now","http://axonect-monetiser-grafana.default/d/3X-EcUm4kb/axp-gateway-traffic-dashboard-pdfb?orgId=1&from=now-12h&to=now"]
+
+try:
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.get("http://axonect-monetiser-grafana.default.svc.cluster.local")
+
+    # Wait for the login fields to be present
+    username_field = WebDriverWait(driver, 30).until(
+        EC.presence_of_element_located((By.NAME, 'user'))
+    )
+    password_field = driver.find_element(By.NAME, 'password')
+
+    # Enter credentials
+    username_field.send_keys("admin")
+    password_field.send_keys("cxgKpmUPfhzbYUX6zxV2")
+
+    # Submit the form
+    login_button = driver.find_element(By.XPATH, '//button[@type="submit"]')
+    login_button.click()
+
+finally:
+    logger.info("Logged in to Grafana!!!")
+
 
 try:
     for i, url in enumerate(urls):
-        driver = webdriver.Chrome(service=service, options=chrome_options)
+        logger.info(url)
         driver.get(url)
-
-        # Wait for the login fields to be present
-        username_field = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.NAME, 'user'))
-        )
-        password_field = driver.find_element(By.NAME, 'password')
-
-        # Enter credentials
-        username_field.send_keys("{{ .Values.grafanaReport.grafana.username }}")
-        password_field.send_keys("{{ .Values.grafanaReport.grafana.password }}")
-
-        # Submit the form
-        login_button = driver.find_element(By.XPATH, '//button[@type="submit"]')
-        login_button.click()
+        driver.set_window_size(1920, 5000)
 
         # Wait for the dashboard to load
         time.sleep(10)
 
-        driver.set_window_size(1920, 5000)
-
         dashboard_name = url.split('/')[-1].split('?')[0]  # Gets the part after last '/' and before '?'
-        logger.info(f"Dashboard {dashboard_name} loaded with data.")
-
         filepath = os.path.join(screenshot_folder, f"dashboard_{i+1}_{dashboard_name}.png")
 
+        logger.info(f"Dashboard {dashboard_name} loaded with data.")
+
         # Take a screenshot of the dashboard area
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@class="react-grid-layout"]'))
+        )   
         dashboard_area = driver.find_element(By.XPATH, '//*[@class="react-grid-layout"]')
         dashboard_area.screenshot(filepath)
         logger.info(f"Screenshot {filepath} created!")
-        driver.quit()
         time.sleep(2)
-
-except Exception as e:
-    logger.error(f"An error occurred: {e}")
+finally:
+    driver.quit()

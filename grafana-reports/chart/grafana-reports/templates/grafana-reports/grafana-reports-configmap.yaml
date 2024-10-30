@@ -10,6 +10,9 @@ data:
 {{ tpl (.Files.Get (printf "%s/grafana-reports/ss_grafana.py" $externalConfigDir)) . | indent 4 }}
 {{ else }}
   ss_grafana.py: |-
+    import os
+    import sys
+    import logging
     from selenium import webdriver
     from selenium.webdriver.chrome.service import Service
     from selenium.webdriver.common.by import By
@@ -28,40 +31,67 @@ data:
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
 
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    # Create a logger object
+    logger = logging.getLogger('my_logger')
+    logger.setLevel(logging.DEBUG)  # Set the logging level
+
+    # Create a StreamHandler to print to stdout
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+
+    # Define a log format
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    stdout_handler.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(stdout_handler)
+
+
+    # Folder for screenshots
+    screenshot_folder = "/grafana-reports/scripts/screenshots"
+    os.makedirs(screenshot_folder, exist_ok=True)
+
+    urls = {{ toRawJson .Values.grafanaReport.grafana.dashboards }}
 
     try:
-        driver.get("{{ .Values.grafanaReport.grafana.dashboard }}")
-        # driver.get("http://grafana.axp.com/d/3X-EcUm4ka/axp-gateway-traffic-dashboard-pdfa?orgId=1&from=now-12h&to=now")
+        for i, url in enumerate(urls):
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            driver.get(url)
 
-        # Wait for the login fields to be present
-        username_field = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.NAME, 'user'))
-        )
-        password_field = driver.find_element(By.NAME, 'password')
+            # Wait for the login fields to be present
+            username_field = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.NAME, 'user'))
+            )
+            password_field = driver.find_element(By.NAME, 'password')
 
-        # Enter credentials
-        username_field.send_keys("{{ .Values.grafanaReport.grafana.username }}")
-        password_field.send_keys("{{ .Values.grafanaReport.grafana.password }}")
+            # Enter credentials
+            username_field.send_keys("{{ .Values.grafanaReport.grafana.username }}")
+            password_field.send_keys("{{ .Values.grafanaReport.grafana.password }}")
 
-        # Submit the form
-        login_button = driver.find_element(By.XPATH, '//button[@type="submit"]')
-        login_button.click()
+            # Submit the form
+            login_button = driver.find_element(By.XPATH, '//button[@type="submit"]')
+            login_button.click()
 
-        # Wait for the dashboard to load
-        time.sleep(10)
+            # Wait for the dashboard to load
+            time.sleep(10)
 
-        # print(total_height)
-        driver.set_window_size(1920, 5000)
-        print("All dashboards are loaded with data.")
+            driver.set_window_size(1920, 5000)
 
-        # Take a screenshot of the entire page
-        dashboard_area = driver.find_element(By.XPATH, '//*[@class="react-grid-layout"]')
-        # driver.save_screenshot("full_ss.png")
-        dashboard_area.screenshot("dashboard_area.png")
+            dashboard_name = url.split('/')[-1].split('?')[0]  # Gets the part after last '/' and before '?'
+            logger.info(f"Dashboard {dashboard_name} loaded with data.")
 
-    finally:
-        driver.quit()
+            filepath = os.path.join(screenshot_folder, f"dashboard_{i+1}_{dashboard_name}.png")
+
+            # Take a screenshot of the dashboard area
+            dashboard_area = driver.find_element(By.XPATH, '//*[@class="react-grid-layout"]')
+            dashboard_area.screenshot(filepath)
+            logger.info(f"Screenshot {filepath} created!")
+            driver.quit()
+            time.sleep(2)
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
 {{- end }}
 
 {{- if .Files.Get (printf "%s/grafana-reports/inline-mail.py" $externalConfigDir) }}
@@ -69,55 +99,102 @@ data:
 {{ tpl (.Files.Get (printf "%s/grafana-reports/inline-mail.py" $externalConfigDir)) . | indent 4 }}
 {{ else }}
   inline-mail.py: |-
+    import os
+    import sys
+    import logging
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
     from email.mime.image import MIMEImage
- 
-    # Configuration
+
+
+    # Create a logger object
+    logger = logging.getLogger('my_logger')
+    logger.setLevel(logging.DEBUG)  # Set the logging level
+
+    # Create a StreamHandler to print to stdout
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+
+    # Define a log format
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    stdout_handler.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(stdout_handler)
+
+
+    ### Configuration
     port = "{{ .Values.grafanaReport.smtp.port }}"
     smtp_server = "{{ .Values.grafanaReport.smtp.host }}"
+
+    {{- if and .Values.grafanaReport.smtp.username .Values.grafanaReport.smtp.password }}
     login = "{{ .Values.grafanaReport.smtp.username }}"
     password = "{{ .Values.grafanaReport.smtp.password }}"
+    {{- end }}
 
     sender_email = "{{ .Values.grafanaReport.smtp.sender }}"
-    receiver_email = "{{ .Values.grafanaReport.smtp.receiver }}"
+    receiver_emails = {{ toRawJson .Values.grafanaReport.smtp.receiver }}
 
-    # Email content
-    subject = "HTML Email with Inline Image from configmap"
-    html = """\
+
+    # receiver_emails_array = receiver_emails.split(",")
+    logger.info("Sending emails to: " + str(receiver_emails))
+
+    ### Directory containing the images
+    image_directory = "/grafana-reports/scripts/screenshots"
+
+    ### Dynamically gather all image paths from the directory
+    image_paths = [
+        os.path.join(image_directory, file_name)
+        for file_name in os.listdir(image_directory)
+        if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))
+    ]
+    logger.info(list(reversed(image_paths)))
+
+    ### Email content
+    subject = "HTML Email with Inline Image from modified"
+
+    ## Generate dynamic HTML content with inline images
+    html_body = """\
     <html>
       <body>
         <p>Hi,<br>
-        This is a <b>test</b> email with an inline image sent using Python.</p>
-        <p><img src="cid:image1"></p>
+        This is a <b>test</b> email with multiple inline images sent using Python.</p>
+    """
+
+    ## Dynamically add <img> tags for each image
+    for i in range(1, len(image_paths) + 1):
+        html_body += f'<p><img src="cid:image{i}"></p>\n'
+
+    html_body += """\
       </body>
     </html>
     """
 
-    # Create a multipart message and set headers
+
+    ### Create a multipart message and set headers
     message = MIMEMultipart()
     message["From"] = sender_email
-    message["To"] = receiver_email
+    message["To"] = ", ".join(receiver_emails)
     message["Subject"] = subject
+    message.attach(MIMEText(html_body, "html"))
 
-    # Attach the HTML part
-    message.attach(MIMEText(html, "html"))
+    ### Open the image files in binary mode and attach it
+    for i, img_path in enumerate(list(reversed(image_paths)), 1):
+        with open(img_path, "rb") as img_file:
+            img = MIMEImage(img_file.read())
+            img.add_header("Content-ID", f"<image{i}>")
+            message.attach(img)
 
-    # Open the image file in binary mode and attach it
-    # with open("/home/pavithra-121252/Documents/sre/Support/week-3/ss/dashboard_area.png", "rb") as img_file:
-    with open("/grafana-reports/scripts/dashboard_area.png", "rb") as img_file:
-        img = MIMEImage(img_file.read())
-        img.add_header("Content-ID", "<image1>")
-        message.attach(img)
-
-    # Send the email
+    ### Send the email
     with smtplib.SMTP(smtp_server, port) as server:
+    {{- if and .Values.grafanaReport.smtp.username .Values.grafanaReport.smtp.password }}
         server.starttls()
         server.login(login, password)
-        server.sendmail(sender_email, receiver_email, message.as_string())
+    {{- end }}
+        server.sendmail(sender_email, receiver_emails, message.as_string())
 
-    print('Sent')
+    logger.info("Email Sent!!!")
 {{- end }}
 
 {{- if .Files.Get (printf "%s/grafana-reports/dalily-reports.sh" $externalConfigDir) }}

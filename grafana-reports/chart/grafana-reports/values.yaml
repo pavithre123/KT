@@ -1,6 +1,6 @@
 externalConfigDir: "modified"
 
-grafanaReport:
+report:
   smtp:
     host: "smtp.gmail.com"
     port: "587"
@@ -13,9 +13,17 @@ grafanaReport:
       - "desmond.allon@gmail.com"
 
   grafana:
+    enable: false
     username: "admin"
     password: "cxgKpmUPfhzbYUX6zxV2"
     dashboards: 
       - "http://axonect-monetiser-grafana.default/d/3X-EcUm4k/axp-gateway-traffic-dashboard-pdf?orgId=1&from=now-12h&to=now"
       - "http://axonect-monetiser-grafana.default/d/3X-EcUm4ka/axp-gateway-traffic-dashboard-pdfa?orgId=1&from=now-12h&to=now"
       - "http://axonect-monetiser-grafana.default/d/3X-EcUm4kb/axp-gateway-traffic-dashboard-pdfb?orgId=1&from=now-12h&to=now"
+  
+  kibana:
+    enable: true
+    dashboards:
+      - "http://axonect-monetiser-kibana:5601/app/dashboards#/view/bcc28b70-e3a5-11ef-aa77-317cd139ea65?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))"
+      - "http://axonect-monetiser-kibana:5601/app/dashboards#/view/cca15990-e3a5-11ef-aa77-317cd139ea65?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))"
+      - "http://axonect-monetiser-kibana:5601/app/dashboards#/view/dacaddf0-e3a2-11ef-aa77-317cd139ea65?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))"

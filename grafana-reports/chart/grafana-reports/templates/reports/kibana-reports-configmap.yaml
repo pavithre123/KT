@@ -1,0 +1,204 @@
+{{- if .Values.report.kibana.enable }}
+{{ $externalConfigDir := .Values.externalConfigDir }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-kibana-reports-configmap
+  namespace : {{ .Release.Namespace }}
+data:
+{{- if .Files.Get (printf "%s/kibana-reports/ss_kibana.py" $externalConfigDir) }}
+  ss_kibana.py: |-
+{{ tpl (.Files.Get (printf "%s/kibana-reports/ss_kibana.py" $externalConfigDir)) . | indent 4 }}
+{{ else }}
+  ss_kibana.py: |-
+    import os
+    import sys
+    import logging
+    from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from webdriver_manager.chrome import ChromeDriverManager
+    import time
+
+    # Setup Chrome driver with headless option
+    # service = Service(ChromeDriverManager().install())
+    service = Service("/grafana-reports/chromedriver-linux64/chromedriver")
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--window-size=1920,5000")  # Set initial window size
+    chrome_options.add_argument("--ignore-certificate-errors")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+
+    urls = {{ toRawJson .Values.report.kibana.dashboards }}
+
+    # Create a logger object
+    logger = logging.getLogger('my_logger')
+    logger.setLevel(logging.DEBUG)  # Set the logging level
+
+    # Create a StreamHandler to print to stdout
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+
+    # Define a log format
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    stdout_handler.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(stdout_handler)
+
+
+    # Folder for screenshots
+    screenshot_folder = "/reports/kibana/scripts/screenshots"
+    os.makedirs(screenshot_folder, exist_ok=True)
+
+    try:
+        for i, url in enumerate(urls):
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            driver.get(url)
+
+            ## Wait for the dashboard to be present
+            dashboardViewport = WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.CLASS_NAME, 'dashboardViewport'))
+            )
+            
+            # Wait for the dashboard to load
+            time.sleep(10)
+
+            driver.set_window_size(1920, 5000)
+
+            dashboard_name = url.split('/')[-1].split('?')[0]  # Gets the part after last '/' and before '?'
+            logger.info(f"Dashboard {dashboard_name} loaded with data.")
+
+            filepath = os.path.join(screenshot_folder, f"dashboard_{i+1}_{dashboard_name}.png")
+
+            # Take a screenshot of the dashboard area
+            dashboard_area = driver.find_element(By.XPATH, '//*[@class="dashboardViewport"]/div')
+            dashboard_area.screenshot(filepath)
+            logger.info(f"Screenshot {filepath} created!")
+            driver.quit()
+            time.sleep(2)
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+
+{{- end }}
+
+{{- if .Files.Get (printf "%s/kibana-reports/inline-mail.py" $externalConfigDir) }}
+  inline-mail.py: |-
+{{ tpl (.Files.Get (printf "%s/kibana-reports/inline-mail.py" $externalConfigDir)) . | indent 4 }}
+{{ else }}
+  inline-mail.py: |-
+    import os
+    import sys
+    import logging
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.image import MIMEImage
+
+
+    # Create a logger object
+    logger = logging.getLogger('my_logger')
+    logger.setLevel(logging.DEBUG)  # Set the logging level
+
+    # Create a StreamHandler to print to stdout
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+
+    # Define a log format
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    stdout_handler.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(stdout_handler)
+
+
+    ### Configuration
+    port = "{{ .Values.report.smtp.port }}"
+    smtp_server = "{{ .Values.report.smtp.host }}"
+
+    {{- if and .Values.report.smtp.username .Values.report.smtp.password }}
+    login = "{{ .Values.report.smtp.username }}"
+    password = "{{ .Values.report.smtp.password }}"
+    {{- end }}
+
+    sender_email = "{{ .Values.report.smtp.sender }}"
+    receiver_emails = {{ toRawJson .Values.report.smtp.receiver }}
+
+
+    # receiver_emails_array = receiver_emails.split(",")
+    logger.info("Sending emails to: " + str(receiver_emails))
+
+    ### Directory containing the images
+    image_directory = "/reports/kibana/scripts/screenshots"
+
+    ### Dynamically gather all image paths from the directory
+    image_paths = [
+        os.path.join(image_directory, file_name)
+        for file_name in os.listdir(image_directory)
+        if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))
+    ]
+    logger.info(list(reversed(image_paths)))
+
+    ### Email content
+    subject = "Kibana Daily Reports"
+
+    ## Generate dynamic HTML content with inline images
+    html_body = """\
+    <html>
+      <body>
+        <p>Hi,<br>
+        This is a <b>Kibana</b> email with multiple inline images sent using Python.</p>
+    """
+
+    ## Dynamically add <img> tags for each image
+    for i in range(1, len(image_paths) + 1):
+        html_body += f'<p><img src="cid:image{i}"></p>\n'
+
+    html_body += """\
+      </body>
+    </html>
+    """
+
+
+    ### Create a multipart message and set headers
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = ", ".join(receiver_emails)
+    message["Subject"] = subject
+    message.attach(MIMEText(html_body, "html"))
+
+    ### Open the image files in binary mode and attach it
+    for i, img_path in enumerate(list(reversed(image_paths)), 1):
+        with open(img_path, "rb") as img_file:
+            img = MIMEImage(img_file.read())
+            img.add_header("Content-ID", f"<image{i}>")
+            message.attach(img)
+
+    ### Send the email
+    with smtplib.SMTP(smtp_server, port) as server:
+    {{- if and .Values.report.smtp.username .Values.report.smtp.password }}
+        server.starttls()
+        server.login(login, password)
+    {{- end }}
+        server.sendmail(sender_email, receiver_emails, message.as_string())
+
+    logger.info("Email Sent!!!")
+{{- end }}
+
+{{- if .Files.Get (printf "%s/kibana-reports/dalily-reports.sh" $externalConfigDir) }}
+  dalily-reports-kibana.sh: |-
+{{ tpl (.Files.Get (printf "%s/kibana-reports/dalily-reports.sh" $externalConfigDir)) . | indent 4 }}
+{{ else }}
+  dalily-reports-kibana.sh: |-
+    #!/bin/bash
+
+    python3 ss_kibana.py
+    python3 inline-mail.py
+
+{{- end }}
+{{- end }}

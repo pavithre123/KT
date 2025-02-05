@@ -40,7 +40,7 @@ receiver_emails = {{ toRawJson .Values.report.smtp.receiver }}
 logger.info("Sending emails to: " + str(receiver_emails))
 
 ### Directory containing the images
-image_directory = "/reports/scripts/grafana/screenshots"
+image_directory = "/reports/scripts/kibana/screenshots"
 
 ### Dynamically gather all image paths from the directory
 image_paths = [
@@ -51,14 +51,14 @@ image_paths = [
 logger.info(list(reversed(image_paths)))
 
 ### Email content
-subject = "HTML Email with Inline Image from modified"
+subject = "Kibana Daily Reports"
 
 ## Generate dynamic HTML content with inline images
 html_body = """\
 <html>
   <body>
     <p>Hi,<br>
-    This is a <b>test</b> email with multiple inline images sent using Python.</p>
+    This is a <b>Kibana</b> email with multiple inline images sent using Python.</p>
 """
 
 ## Dynamically add <img> tags for each image

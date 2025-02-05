@@ -23,24 +23,22 @@ stdout_handler.setFormatter(formatter)
 logger.addHandler(stdout_handler)
 
 
-### Configuration
-port = "{{ .Values.report.smtp.port }}"
-smtp_server = "{{ .Values.report.smtp.host }}"
+# Configuration
+port = "587"
+smtp_server = "smtp.gmail.com"
+login = "pavithresupprtfw1@gmail.com"
+password = "alzfjobodjlnehfu"
 
-{{- if and .Values.report.smtp.username .Values.report.smtp.password }}
-login = "{{ .Values.report.smtp.username }}"
-password = "{{ .Values.report.smtp.password }}"
-{{- end }}
+sender_email = "pavithresupprtfw1@gmail.com"
+receiver_emails = "pavithresupprtfw1@gmail.com,pavithrerathnayake@gmail.com,desmond.allon@gmail.com"
 
-sender_email = "{{ .Values.report.smtp.sender }}"
-receiver_emails = {{ toRawJson .Values.report.smtp.receiver }}
-
-
-# receiver_emails_array = receiver_emails.split(",")
-logger.info("Sending emails to: " + str(receiver_emails))
+# print(receiver_emails.split(","))
+receiver_emails_array = receiver_emails.split(",")
+# print("Sending emails to: " + str(receiver_emails_array))
+logger.info("Sending emails to: " + str(receiver_emails_array))
 
 ### Directory containing the images
-image_directory = "/reports/scripts/grafana/screenshots"
+image_directory = "screenshots"
 
 ### Dynamically gather all image paths from the directory
 image_paths = [
@@ -58,7 +56,7 @@ html_body = """\
 <html>
   <body>
     <p>Hi,<br>
-    This is a <b>test</b> email with multiple inline images sent using Python.</p>
+    This is a <b>Kibana</b> email with multiple inline images sent using Python.</p>
 """
 
 ## Dynamically add <img> tags for each image
@@ -74,7 +72,7 @@ html_body += """\
 ### Create a multipart message and set headers
 message = MIMEMultipart()
 message["From"] = sender_email
-message["To"] = ", ".join(receiver_emails)
+message["To"] = ", ".join(receiver_emails_array)
 message["Subject"] = subject
 message.attach(MIMEText(html_body, "html"))
 
@@ -87,10 +85,8 @@ for i, img_path in enumerate(list(reversed(image_paths)), 1):
 
 ### Send the email
 with smtplib.SMTP(smtp_server, port) as server:
-{{- if and .Values.report.smtp.username .Values.report.smtp.password }}
     server.starttls()
     server.login(login, password)
-{{- end }}
-    server.sendmail(sender_email, receiver_emails, message.as_string())
+    server.sendmail(sender_email, receiver_emails_array, message.as_string())
 
 logger.info("Email Sent!!!")

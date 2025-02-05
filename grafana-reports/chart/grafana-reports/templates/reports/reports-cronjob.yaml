@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: grafana-reports-cronjob
+spec:
+  schedule: "59 11 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          initContainers:
+{{- if .Values.report.grafana.enable }}
+          - name: init-grafana
+            image: busybox:1.32
+            command: [sh, -c] 
+            args:
+              - | 
+                echo -e "Checking for the availability of Grafana server"
+                while ! nc -z axonect-monetiser-grafana.default.svc.cluster.local 80
+                do 
+                  sleep 1
+                  printf "-" 
+                done 
+                echo -e "  >>  Grafana server has started"
+{{- end }}
+{{- if .Values.report.kibana.enable }}
+          - name: init-kibana
+            image: busybox:1.32
+            command: [sh, -c] 
+            args:
+              - | 
+                echo -e "Checking for the availability of Kibana server"
+                while ! nc -z axonect-monetiser-kibana.default.svc.cluster.local 5601
+                do 
+                  sleep 1
+                  printf "-" 
+                done 
+                echo -e "  >>  Kibana server has started"
+{{- end }}
+          containers:
+          - name: report
+            image: gcr.io/cia-rnd-195110/grafana-reports:2.0.0
+            command: [bash, -c] 
+            env:
+              - name: GRAFANA
+                value: "{{ .Values.report.grafana.enable }}"
+              - name: KIBANA
+                value: "{{ .Values.report.kibana.enable }}"
+            args:
+              - |
+                mkdir -p /reports/scripts
+                cp -r /scripts/* /reports/scripts/
+                cd /reports/scripts/
+                ls -l
+                if [[ "$GRAFANA" == "true" ]]; then
+                    echo "Grafana reports enabled!!!"
+                    cd grafana
+                    chmod +x dalily-reports-grafana.sh
+                    /bin/bash dalily-reports-grafana.sh
+                elif [[ "$GRAFANA" == "false" ]]; then
+                    echo "Grafana reports not enabled!!!"
+                else
+                    echo "set GRAFANA environment variable!!!"
+                    exit -1
+                fi
+
+                if [[ "$KIBANA" == "true" ]]; then
+                    echo "Kibana reports enabled!!!"
+                    cd kibana
+                    chmod +x dalily-reports-kibana.sh
+                    /bin/bash dalily-reports-kibana.sh
+                elif [[ "$KIBANA" == "false" ]]; then
+                    echo "Kibana reports not enabled!!!"
+                else
+                    echo "set KIBANA environment variable!!!"
+                    exit -1
+                fi
+                sleep 5
+            volumeMounts:
+{{- if .Values.report.grafana.enable }}
+            - name: grafana-reports-configmap
+              mountPath: /scripts/grafana
+{{- end }}
+{{- if .Values.report.kibana.enable }}
+            - name: kibana-reports-configmap
+              mountPath: /scripts/kibana
+{{- end }}
+          restartPolicy: Never
+          volumes:
+{{- if .Values.report.grafana.enable }}
+          - name: grafana-reports-configmap
+            configMap:
+              name: {{ .Release.Name }}-grafana-reports-configmap
+{{- end }}
+{{- if .Values.report.kibana.enable }}
+          - name: kibana-reports-configmap
+            configMap:
+              name: {{ .Release.Name }}-kibana-reports-configmap
+{{- end }}

@@ -15,10 +15,12 @@ service = Service("/grafana-reports/chromedriver-linux64/chromedriver")
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument("--headless")
 chrome_options.add_argument("--window-size=1920,5000")  # Set initial window size
+chrome_options.add_argument("--ignore-certificate-errors")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-gpu")
 
+urls = {{ toRawJson .Values.report.kibana.dashboards }}
 
 # Create a logger object
 logger = logging.getLogger('my_logger')
@@ -37,30 +39,19 @@ logger.addHandler(stdout_handler)
 
 
 # Folder for screenshots
-screenshot_folder = "/reports/scripts/grafana/screenshots"
+screenshot_folder = "/reports/scripts/kibana/screenshots"
 os.makedirs(screenshot_folder, exist_ok=True)
-
-urls = {{ toRawJson .Values.report.grafana.dashboards }}
 
 try:
     for i, url in enumerate(urls):
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.get(url)
 
-        # Wait for the login fields to be present
-        username_field = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.NAME, 'user'))
+        ## Wait for the dashboard to be present
+        dashboardViewport = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'dashboardViewport'))
         )
-        password_field = driver.find_element(By.NAME, 'password')
-
-        # Enter credentials
-        username_field.send_keys("{{ .Values.report.grafana.username }}")
-        password_field.send_keys("{{ .Values.report.grafana.password }}")
-
-        # Submit the form
-        login_button = driver.find_element(By.XPATH, '//button[@type="submit"]')
-        login_button.click()
-
+        
         # Wait for the dashboard to load
         time.sleep(10)
 
@@ -72,7 +63,7 @@ try:
         filepath = os.path.join(screenshot_folder, f"dashboard_{i+1}_{dashboard_name}.png")
 
         # Take a screenshot of the dashboard area
-        dashboard_area = driver.find_element(By.XPATH, '//*[@class="react-grid-layout"]')
+        dashboard_area = driver.find_element(By.XPATH, '//*[@class="dashboardViewport"]/div')
         dashboard_area.screenshot(filepath)
         logger.info(f"Screenshot {filepath} created!")
         driver.quit()
@@ -80,3 +71,5 @@ try:
 
 except Exception as e:
     logger.error(f"An error occurred: {e}")
+
+

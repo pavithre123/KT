@@ -2,7 +2,7 @@ FROM gcr.io/cia-rnd-195110/axp-dep:axonect-2.2.31
 
 RUN ls -l Axonect-Monetiser/repository/components/dropins
 
-COPY . /home/axpuser/
+COPY --chown=axpuser:axp . /home/axpuser/
 
 RUN ls -l Axonect-Monetiser/repository/components/dropins
 # /Axonect-Monetiser/repository/components/dropins

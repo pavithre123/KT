@@ -1,0 +1,47 @@
+{{- if .Values.report.grafana.enable }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: grafana-reports-cronjob
+spec:
+  schedule: "59 11 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          initContainers:
+          - name: init-grafana
+            image: busybox:1.32
+            command: [sh, -c] 
+            args:
+              - | 
+                echo -e "Checking for the availability of Grafana server"
+                while ! nc -z axonect-monetiser-grafana.default.svc.cluster.local 80
+                do 
+                  sleep 1
+                  printf "-" 
+                done 
+                echo -e "  >>  Grafana server has started"
+          containers:
+          - name: report
+            image: gcr.io/cia-rnd-195110/grafana-reports:2.0.0
+            command: [bash, -c] 
+            args:
+              - |
+                mkdir -p /reports/scripts
+                cp -r /scripts/* /reports/scripts/
+                cd /reports/scripts/
+                ls -l
+                cd grafana
+                chmod +x dalily-reports-grafana.sh
+                /bin/bash dalily-reports-grafana.sh
+                sleep 5
+            volumeMounts:
+            - name: grafana-reports-configmap
+              mountPath: /scripts/grafana
+          restartPolicy: Never
+          volumes:
+          - name: grafana-reports-configmap
+            configMap:
+              name: {{ .Release.Name }}-grafana-reports-configmap
+{{- end }}

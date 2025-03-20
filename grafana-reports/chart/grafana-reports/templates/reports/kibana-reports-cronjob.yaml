@@ -4,7 +4,7 @@ kind: CronJob
 metadata:
   name: grafana-reports-cronjob
 spec:
-  schedule: "59 11 * * *"
+  schedule: "{{ .Values.report.kibana.schedule }}"
   jobTemplate:
     spec:
       template:
@@ -24,13 +24,8 @@ spec:
                 echo -e "  >>  Kibana server has started"
           containers:
           - name: report
-            image: gcr.io/cia-rnd-195110/grafana-reports:2.0.0
+            image: "{{ .Values.report.global.image }}"
             command: [bash, -c] 
-            env:
-              - name: GRAFANA
-                value: "{{ .Values.report.grafana.enable }}"
-              - name: KIBANA
-                value: "{{ .Values.report.kibana.enable }}"
             args:
               - |
                 mkdir -p /reports/scripts

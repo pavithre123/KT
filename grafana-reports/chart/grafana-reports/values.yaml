@@ -1,6 +1,8 @@
 externalConfigDir: "modified"
 
 report:
+  global:
+    image: "gcr.io/cia-rnd-195110/grafana-reports:2.0.0"
   smtp:
     host: "smtp.gmail.com"
     port: "587"
@@ -13,7 +15,8 @@ report:
       - "desmond.allon@gmail.com"
 
   grafana:
-    enable: false
+    enable: true
+    schedule: "59 11 * * *"
     username: "admin"
     password: "cxgKpmUPfhzbYUX6zxV2"
     dashboards: 
@@ -23,6 +26,7 @@ report:
   
   kibana:
     enable: true
+    schedule: "59 11 * * *"
     dashboards:
       - "http://axonect-monetiser-kibana:5601/app/dashboards#/view/bcc28b70-e3a5-11ef-aa77-317cd139ea65?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))"
       - "http://axonect-monetiser-kibana:5601/app/dashboards#/view/cca15990-e3a5-11ef-aa77-317cd139ea65?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-24h,to:now))"

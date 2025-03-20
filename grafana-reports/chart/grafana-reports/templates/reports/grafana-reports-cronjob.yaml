@@ -4,7 +4,7 @@ kind: CronJob
 metadata:
   name: grafana-reports-cronjob
 spec:
-  schedule: "59 11 * * *"
+  schedule: "{{ .Values.report.grafana.schedule }}"
   jobTemplate:
     spec:
       template:
@@ -24,7 +24,7 @@ spec:
                 echo -e "  >>  Grafana server has started"
           containers:
           - name: report
-            image: gcr.io/cia-rnd-195110/grafana-reports:2.0.0
+            image: "{{ .Values.report.global.image }}"
             command: [bash, -c] 
             args:
               - |
